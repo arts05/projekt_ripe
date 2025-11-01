@@ -125,7 +125,7 @@ def main():
     clock = pygame.time.Clock()
     state = GameState.RUNNING_MENU
 
-    taust = pygame.image.load("piro.png").convert()
+    taust = pygame.image.load("/assets/piro.png").convert()
     taust = pygame.transform.scale(taust, (1260, 720))
 
     desc_width = 900
