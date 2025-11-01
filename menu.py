@@ -105,7 +105,6 @@ class TextBox:
 
     def draw(self, surface):
         pygame.draw.rect(surface, DARK_GREEN, self.rect, border_radius=8)
-
         x = self.rect.x + self.padding
         y = self.rect.y + self.padding
         for line in self.lines:
@@ -120,18 +119,20 @@ class GameState(Enum):
 
 def main():
     pygame.init()
-    screen = pygame.display.set_mode((800, 600))
-    pygame.display.set_caption("Menüü")
+    screen = pygame.display.set_mode((1260, 720))
+    pygame.display.set_caption("Pirogovi park survival")
 
     clock = pygame.time.Clock()
     state = GameState.RUNNING_MENU
 
     taust = pygame.image.load("piro.png").convert()
-    taust = pygame.transform.scale(taust, (800, 600))
+    taust = pygame.transform.scale(taust, (1260, 720))
 
+    desc_width = 900
+    desc_x = (1260 - desc_width) // 2
     description_box = TextBox(
-        topleft=(50, 40),
-        width=700,
+        topleft=(desc_x, 30),
+        width=desc_width,
         text=GAME_DESCRIPTION,
         font_size=20,
         text_color=DESCRIPTION_TEXT,
@@ -140,7 +141,7 @@ def main():
     )
 
     start_btn = UIElement(
-        center_position=(250, 540),
+        center_position=(200, 660),
         font_size=30,
         text_rgb=WHITE,
         text="Alusta",
@@ -148,12 +149,13 @@ def main():
     )
 
     quit_btn = UIElement(
-        center_position=(550, 540),
+        center_position=(1060, 660),
         font_size=30,
         text_rgb=WHITE,
         text="Välju",
         action=GameState.QUIT,
     )
+
 
     running = True
     while running:
@@ -163,7 +165,6 @@ def main():
             if event.type == pygame.QUIT:
                 state = GameState.QUIT
                 running = False
-
             if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                 mouse_up = True
 
