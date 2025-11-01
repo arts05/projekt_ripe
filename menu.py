@@ -1,12 +1,11 @@
+# menu.py
+import os
 import pygame
 import pygame.freetype
 from pygame.sprite import Sprite
-from enum import Enum
 
-GREEN = (46, 125, 50)
 WHITE = (255, 255, 255)
 DARK_GREEN = (20, 60, 20)
-
 DESCRIPTION_TEXT = (255, 255, 255)
 
 GAME_DESCRIPTION = (
@@ -28,17 +27,10 @@ class UIElement(Sprite):
         self.action = action
 
         default_image = create_surface_with_text(
-            text=text,
-            font_size=font_size,
-            text_rgb=text_rgb,
-            bg_rgb=None,
+            text=text, font_size=font_size, text_rgb=text_rgb, bg_rgb=None
         )
-
         highlighted_image = create_surface_with_text(
-            text=text,
-            font_size=font_size * 1.2,
-            text_rgb=text_rgb,
-            bg_rgb=None,
+            text=text, font_size=font_size * 1.2, text_rgb=text_rgb, bg_rgb=None
         )
 
         self.images = [default_image, highlighted_image]
@@ -79,7 +71,6 @@ class TextBox:
 
         self.lines = []
         self.line_height = self.font.get_sized_height()
-
         for raw_line in text.split("\n"):
             self.lines.extend(self._wrap_line(raw_line, width - 2 * padding))
 
@@ -88,20 +79,17 @@ class TextBox:
 
     def _wrap_line(self, line, max_width):
         words = line.split(" ")
-        wrapped_lines = []
+        wrapped = []
         current = ""
-
         for word in words:
             test = word if current == "" else (current + " " + word)
-            bounds = self.font.get_rect(test)
-            if bounds.width <= max_width:
+            if self.font.get_rect(test).width <= max_width:
                 current = test
             else:
-                wrapped_lines.append(current)
+                wrapped.append(current)
                 current = word
-
-        wrapped_lines.append(current)
-        return wrapped_lines
+        wrapped.append(current)
+        return wrapped
 
     def draw(self, surface):
         pygame.draw.rect(surface, DARK_GREEN, self.rect, border_radius=8)
@@ -112,24 +100,16 @@ class TextBox:
             surface.blit(text_surface, (x, y))
             y += self.line_height
 
-class GameState(Enum):
-    RUNNING_MENU = 0
-    START_GAME = 1
-    QUIT = -1
-
-def main():
-    pygame.init()
-    screen = pygame.display.set_mode((1260, 720))
-    pygame.display.set_caption("Pirogovi park survival")
-
+def run_menu(screen):
     clock = pygame.time.Clock()
-    state = GameState.RUNNING_MENU
+    WIDTH, HEIGHT = screen.get_size()
 
-    taust = pygame.image.load("assets/piro.png").convert()
-    taust = pygame.transform.scale(taust, (1260, 720))
+    bg_path = os.path.join(os.path.dirname(__file__), "assets", "piro.png")
+    taust = pygame.image.load(bg_path).convert()
+    taust = pygame.transform.scale(taust, (WIDTH, HEIGHT))
 
     desc_width = 900
-    desc_x = (1260 - desc_width) // 2
+    desc_x = (WIDTH - desc_width) // 2
     description_box = TextBox(
         topleft=(desc_x, 30),
         width=desc_width,
@@ -141,61 +121,37 @@ def main():
     )
 
     start_btn = UIElement(
-        center_position=(200, 660),
+        center_position=(200, HEIGHT - 60),
         font_size=30,
         text_rgb=WHITE,
         text="Alusta",
-        action=GameState.START_GAME,
+        action="START_GAME",
     )
-
     quit_btn = UIElement(
-        center_position=(1060, 660),
+        center_position=(WIDTH - 200, HEIGHT - 60),
         font_size=30,
         text_rgb=WHITE,
         text="Välju",
-        action=GameState.QUIT,
+        action="QUIT",
     )
 
-
-    running = True
-    while running:
+    while True:
         mouse_up = False
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                state = GameState.QUIT
-                running = False
+                return "QUIT"
             if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                 mouse_up = True
 
         mouse_pos = pygame.mouse.get_pos()
-
-        start_action = start_btn.update(mouse_pos, mouse_up)
-        quit_action = quit_btn.update(mouse_pos, mouse_up)
-
-        ui_action = start_action or quit_action
-        if ui_action == GameState.START_GAME:
-            state = GameState.START_GAME
-            print("Alustan mänguga...")
-        if ui_action == GameState.QUIT:
-            state = GameState.QUIT
-            running = False
+        ui_action = start_btn.update(mouse_pos, mouse_up) or quit_btn.update(mouse_pos, mouse_up)
+        if ui_action in ("START_GAME", "QUIT"):
+            return ui_action
 
         screen.blit(taust, (0, 0))
-
         description_box.draw(screen)
         start_btn.draw(screen)
         quit_btn.draw(screen)
 
         pygame.display.flip()
         clock.tick(60)
-
-    pygame.quit()
-
-    if state == GameState.START_GAME:
-        print("Mäng hakkaks siin tööle")
-    elif state == GameState.QUIT:
-        print("Valiti 'välju'")
-
-if __name__ == "__main__":
-    main()
