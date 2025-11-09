@@ -1,3 +1,7 @@
+
+import os
+os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
+
 import pygame
 import importlib
 
@@ -11,14 +15,21 @@ def ensure_display():
 
 def run_menu(screen):
     menu = importlib.import_module("menu")
-    return menu.run_menu(screen)
+    if hasattr(menu, "run_menu"):
+        return menu.run_menu(screen)
+    return "QUIT"
 
 def run_game(screen):
-    # placeholder until you add game.py with run_game(screen)
+    try:
+        game = importlib.import_module("game")
+        if hasattr(game, "run_game"):
+            return game.run_game(screen)
+    except ModuleNotFoundError:
+        pass
+
     clock = pygame.time.Clock()
     font = pygame.font.SysFont("consolas", 28)
     while True:
-        dt = clock.tick(FPS)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return "QUIT"
@@ -31,6 +42,7 @@ def run_game(screen):
         screen.blit(t1, (WIDTH//2 - t1.get_width()//2, HEIGHT//2 - 20))
         screen.blit(t2, (WIDTH//2 - t2.get_width()//2, HEIGHT//2 + 20))
         pygame.display.flip()
+        clock.tick(FPS)
 
 def main():
     pygame.init()
