@@ -1,5 +1,5 @@
 """Tegemist on Pythoni keskkonnas tehtud mänguga, mis on Pirogovi pargi 'Tower defense' (peamine menüü selleks mänguks). Autoriteks on Arthur Klettenberg ja Rene Miller
-Kasutatud allikana on Tartu linna pilt Pirogovi pargist."""
+Kasutatud allikana on Tartu linna pilt Pirogovi pargist. Et mängida, pane käima main.py programm."""
 import os
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 
@@ -14,13 +14,13 @@ def ensure_display():
         pygame.display.set_mode((WIDTH, HEIGHT))
     return pygame.display.get_surface()
 
-def run_menu(screen):
+def run_menu(screen): #jooksutab menu.py, et kuvada menüü
     menu = importlib.import_module("menu")
     if hasattr(menu, "run_menu"):
         return menu.run_menu(screen)
     return "QUIT"
 
-def run_game(screen):
+def run_game(screen): #jooksutab game.py, et alustada mängu
     try:
         game = importlib.import_module("game")
         if hasattr(game, "run_game"):
@@ -39,13 +39,13 @@ def run_game(screen):
 
         screen.fill((20, 20, 20))
         t1 = font.render("game.py puudub – placeholder.", True, (240, 240, 240))
-        t2 = font.render("ESC / Q / Backspace = tagasi menüüsse", True, (200, 200, 200))
+        t2 = font.render("ESC / Q / Backspace = tagasi menüüsse", True, (200, 200, 200)) #oli esialgne placeholder
         screen.blit(t1, (WIDTH//2 - t1.get_width()//2, HEIGHT//2 - 20))
         screen.blit(t2, (WIDTH//2 - t2.get_width()//2, HEIGHT//2 + 20))
         pygame.display.flip()
         clock.tick(FPS)
 
-def main():
+def main(): #funktsioon, et kuvada ekraani ja teha vastavaid menüü vahetusi.
     pygame.init()
     pygame.display.set_caption("Piro survival")
     screen = ensure_display()

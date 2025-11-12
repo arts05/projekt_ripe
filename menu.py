@@ -59,7 +59,7 @@ class UIElement(Sprite):
     def draw(self, surface):
         surface.blit(self.image, self.rect)
 
-class TextBox:
+class TextBox: #tekstikast üleval osas mängul, et kuvada tutvustatava teksti.
     def __init__(self, topleft, width, text, font_size, text_color, box_color, padding=12):
         self.topleft = topleft
         self.width = width
@@ -100,7 +100,7 @@ class TextBox:
             surface.blit(text_surface, (x, y))
             y += self.line_height
 
-def run_menu(screen):
+def run_menu(screen): #menüü ekraani kood, et kuvada pilti
     clock = pygame.time.Clock()
     WIDTH, HEIGHT = screen.get_size()
 
