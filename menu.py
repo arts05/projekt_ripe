@@ -1,4 +1,4 @@
-# menu.py
+"""Tegemist on Pythoni keskkonnas tehtud mänguga, mis on Pirogovi pargi 'Tower defense'. Autoriteks on Arthur Klettenberg ja Rene Miller."""
 import os
 import pygame
 import pygame.freetype

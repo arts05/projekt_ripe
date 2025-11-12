@@ -1,3 +1,6 @@
+"""Tegemist on Pythoni keskkonnas tehtud mänguga, mis on Pirogovi pargi 'Tower defense'. Autoriteks on Arthur Klettenberg ja Rene Miller
+Eeskujuna kastuatud allikad on Tartu linna poolt tehtud pildid Pirogovi pargist ning Maa- ja Ruumiameti sateliitpildid"""
+
 import os
 import math
 import random
