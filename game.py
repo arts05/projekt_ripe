@@ -14,7 +14,7 @@ YELLOW = (250, 220, 70)
 BLACK  = (10,  10,  10)
 
 # Taustapildi failinimi (asub kaustas assets/)
-BG_FILENAME = "piro_game.png"
+BG_FILENAME = os.path.join(os.path.dirname(__file__), "assets", "pirogov_droon.png")
 
 SPAWN_REL = (0.535, 0.305)
 
