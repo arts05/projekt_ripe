@@ -64,6 +64,13 @@ def _asset_path(name):
     """Koosta täistee assets-kausta alla (nagu sinu varasem stiil)."""
     return os.path.join(os.path.dirname(__file__), "assets", name)
 
+SHOOT_SOUND   = pygame.mixer.Sound(_asset_path("smg1_fire1.wav"))
+HIT_SOUND     = pygame.mixer.Sound(_asset_path("hitbod1.wav"))
+PERISH_SOUND  = pygame.mixer.Sound(_asset_path("perish.wav"))
+
+SHOOT_SOUND.set_volume(0.4)
+HIT_SOUND.set_volume(0.4)
+PERISH_SOUND.set_volume(0.4)
 
 def _load_background(w, h):
     """Laeb taustapildi assets-kaustast ja skaleerib akna (w,h) mõõtu."""
@@ -294,6 +301,7 @@ def run_game(screen):
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and player.can_shoot():
                     mx, my = pygame.mouse.get_pos()
                     bullets.append(player.shoot(mx, my))
+                    SHOOT_SOUND.play()
             else:
                 # Võidu/kaotuse ekraanilt ükskõik milline klahv → menüüsse
                 if event.type == pygame.KEYDOWN:
@@ -345,8 +353,10 @@ def run_game(screen):
                 if (e.pos - b.pos).length() <= e.r + b.r:
                     e.hit(1)
                     b.alive = False
+                    HIT_SOUND.play()
                     if not e.alive:
                         score += 10
+                        PERISH_SOUND.play()
         enemies = [e for e in enemies if e.alive]
 
         # Vaenlane jõuab mängijani → mängija kaotab 1 HP, vaenlane hävineb

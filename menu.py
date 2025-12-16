@@ -20,6 +20,14 @@ def create_surface_with_text(text, font_size, text_rgb, bg_rgb=None, bold=True):
     surface, _ = font.render(text=text, fgcolor=text_rgb, bgcolor=bg_rgb)
     return surface.convert_alpha()
 
+def load_sound(name):
+    return pygame.mixer.Sound(
+        os.path.join(os.path.dirname(__file__), "assets", name)
+    )
+
+BUTTON_CLICK_SOUND = load_sound("buttonclickrelease.wav")
+BUTTON_CLICK_SOUND.set_volume(0.4)
+
 class UIElement(Sprite):
     def __init__(self, center_position, text, font_size, text_rgb, action=None):
         super().__init__()
@@ -51,7 +59,10 @@ class UIElement(Sprite):
         if self.rect.collidepoint(mouse_pos):
             self.mouse_over = True
             if mouse_up:
+                if self.action == "START_GAME":
+                    BUTTON_CLICK_SOUND.play()
                 return self.action
+
         else:
             self.mouse_over = False
         return None
