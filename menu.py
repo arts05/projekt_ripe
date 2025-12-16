@@ -26,7 +26,7 @@ def load_sound(name):
     )
 
 BUTTON_CLICK_SOUND = load_sound("buttonclickrelease.wav")
-BUTTON_CLICK_SOUND.set_volume(0.4)
+BUTTON_CLICK_SOUND.set_volume(0.1)
 
 class UIElement(Sprite):
     def __init__(self, center_position, text, font_size, text_rgb, action=None):

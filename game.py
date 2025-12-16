@@ -27,7 +27,7 @@ SPAWN_REL = (0.535, 0.305)
 
 # Suurused (ringide/“hitboxi” raadiused px)
 PLAYER_R = 18
-ENEMY_R  = 14
+ENEMY_R  = 18
 
 
 # ---- ABIFUNKTSIOONID ----
@@ -64,13 +64,13 @@ def _asset_path(name):
     """Koosta täistee assets-kausta alla (nagu sinu varasem stiil)."""
     return os.path.join(os.path.dirname(__file__), "assets", name)
 
-SHOOT_SOUND   = pygame.mixer.Sound(_asset_path("smg1_fire1.wav"))
+SHOOT_SOUND   = pygame.mixer.Sound(_asset_path("attack.wav"))
 HIT_SOUND     = pygame.mixer.Sound(_asset_path("hitbod1.wav"))
 PERISH_SOUND  = pygame.mixer.Sound(_asset_path("perish.wav"))
 
-SHOOT_SOUND.set_volume(0.4)
-HIT_SOUND.set_volume(0.4)
-PERISH_SOUND.set_volume(0.4)
+SHOOT_SOUND.set_volume(0.1)
+HIT_SOUND.set_volume(0.1)
+PERISH_SOUND.set_volume(0.1)
 
 def _load_background(w, h):
     """Laeb taustapildi assets-kaustast ja skaleerib akna (w,h) mõõtu."""
@@ -185,7 +185,7 @@ class Enemy:
             self.pos = pygame.Vector2(w + 20, random.randint(0, h))
 
         # Kiirus kasvab laine numbriga veidi
-        base = 70 + wave * 4
+        base = 70 + wave * 4 * 0.9
         self.speed = random.uniform(base * 0.9, base * 1.2)
 
         self.r = ENEMY_R
@@ -373,7 +373,7 @@ def run_game(screen):
         # Kui laine läbi (kõik vaenlased hävitatud), liigu järgmisele; pärast 10. võit
         res = waves.try_next(enemies)
         if res == "win":
-            state = "win"
+            return "END_SCREEN"
 
         # ---- JOONISTAMINE ----
         screen.blit(bg_image, (0, 0))    # taustakaart

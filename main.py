@@ -45,6 +45,12 @@ def run_game(screen): #jooksutab game.py, et alustada mängu
         pygame.display.flip()
         clock.tick(FPS)
 
+def run_end(screen):
+    end = importlib.import_module("end")
+    if hasattr(end, "run_end"):
+        return end.run_end(screen)
+    return "QUIT"
+
 def main(): #funktsioon, et kuvada ekraani ja teha vastavaid menüü vahetusi.
     pygame.init()
     pygame.display.set_caption("Piro survival")
@@ -66,6 +72,15 @@ def main(): #funktsioon, et kuvada ekraani ja teha vastavaid menüü vahetusi.
 
         elif state == "GAME":
             result = run_game(screen)
+            if result == "BACK_TO_MENU":
+                state = "MENU"
+            elif result == "END_SCREEN":
+                state = "END"
+            elif result == "QUIT":
+                running = False
+        
+        elif state == "END":
+            result = run_end(screen)
             if result == "BACK_TO_MENU":
                 state = "MENU"
             elif result == "QUIT":
