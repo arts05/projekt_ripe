@@ -5,6 +5,7 @@ import os
 import math
 import random
 import pygame
+import glob  # (ENEMY_PATTERN tugi)
 
 # ---- VÄRVID / KONSTANDID ----
 WHITE  = (255, 255, 255)
@@ -18,8 +19,8 @@ DARK_GREEN = (20, 60, 20)
 BG_FILENAME = os.path.join(os.path.dirname(__file__), "assets", "pirogov_droon.png")
 
 # Sprite-failide täisteed (nagu soovisid)
-PLAYER_LOOK = os.path.join(os.path.dirname(__file__), "assets", "tekkelpixel.png")
-ENEMY_LOOK  = os.path.join(os.path.dirname(__file__), "assets", "parm.png")
+PLAYER_LOOK   = os.path.join(os.path.dirname(__file__), "assets", "tekkelpixel.png")
+ENEMY_PATTERN = os.path.join(os.path.dirname(__file__), "assets", "parm*.png")  # (ENEMY_PATTERN tugi)
 
 # Mängija algpositsioon (suhtelised koordinaadid ekraani mõõtude suhtes)
 SPAWN_REL = (0.535, 0.305)
@@ -37,6 +38,26 @@ def _unit_vec(ax, ay, bx, by):
     if d == 0:
         return 0.0, 0.0
     return dx / d, dy / d
+
+
+def _load_enemy_sprites(pattern, diameter):
+    """(ENEMY_PATTERN) Lae kõik vastase sprited mustriga pattern, skaleeri hitboxi mõõtu ja joonda keskmesse."""
+    sprites = []
+    for path in sorted(glob.glob(pattern)):
+        try:
+            img = pygame.image.load(path).convert_alpha()
+        except Exception:
+            continue
+        w, h = img.get_width(), img.get_height()
+        scale = diameter / max(w, h)
+        img = pygame.transform.smoothscale(img, (max(1, int(w*scale)), max(1, int(h*scale))))
+        surf = pygame.Surface((diameter, diameter), pygame.SRCALPHA)
+        surf.blit(img, img.get_rect(center=(diameter//2, diameter//2)))
+        sprites.append(surf)
+    return sprites
+
+# Lae 1x kõik variandid mällu (globaalne list) – (ENEMY_PATTERN)
+ENEMY_SPRITES = _load_enemy_sprites(ENEMY_PATTERN, diameter=ENEMY_R*2)
 
 
 def _asset_path(name):
@@ -163,7 +184,9 @@ class Enemy:
         self.r = ENEMY_R
         self.hp = 1 + (1 if wave >= 6 else 0)  # alates 6. lainest veidi sitkem
         self.alive = True
-        self.sprite = sprite  # eel-skaleeritud Surface või None
+
+        # (ENEMY_PATTERN) vali juhuslik baassprite varamust (võib olla tühi list → None)
+        self.sprite_base = random.choice(ENEMY_SPRITES) if ENEMY_SPRITES else None
 
     def update(self, dt, target_pos):
         """Liigu sihtmärgi (mängija) suunas."""
@@ -177,11 +200,15 @@ class Enemy:
         if self.hp <= 0:
             self.alive = False
 
-    def draw(self, s):
-        """Joonista vaenlane (sprite või ring)."""
-        if self.sprite:
-            rect = self.sprite.get_rect(center=(int(self.pos.x), int(self.pos.y)))
-            s.blit(self.sprite, rect)
+    def draw(self, s, target_pos):
+        """(ENEMY_PATTERN) Joonista vaenlane – sprite pööratud mängija suunas või ring."""
+        if self.sprite_base:
+            dx = target_pos.x - self.pos.x
+            dy = target_pos.y - self.pos.y
+            angle_deg = -math.degrees(math.atan2(dy, dx))  # ekraani Y kasvab alla
+            img = pygame.transform.rotozoom(self.sprite_base, angle_deg, 1.0)
+            rect = img.get_rect(center=(int(self.pos.x), int(self.pos.y)))
+            s.blit(img, rect)
         else:
             pygame.draw.circle(s, RED, (int(self.pos.x), int(self.pos.y)), self.r)
 
@@ -209,6 +236,7 @@ class Waves:
         self.acc += dt
         while self.acc >= self.interval and self.spawned < self.to_spawn:
             self.acc -= self.interval
+            # Enemy valib ise juhusliku skin'i ENEMY_SPRITES listist; 'enemy_sprite' arg jäetakse alles, kuid ei kasutata
             enemies.append(Enemy(self.wave, W, H, sprite=enemy_sprite))
             self.spawned += 1
         if self.spawned >= self.to_spawn:
@@ -237,7 +265,7 @@ def run_game(screen):
 
     # Lae ja skaleeri sprited (kui puuduvad, tagastab None → joonistame ringid)
     player_sprite = _load_sprite_or_none_from_path(PLAYER_LOOK, diameter=PLAYER_R * 2)
-    enemy_sprite  = _load_sprite_or_none_from_path(ENEMY_LOOK,  diameter=ENEMY_R  * 2)
+    enemy_sprite  = _load_sprite_or_none_from_path(ENEMY_PATTERN,  diameter=ENEMY_R  * 2)  # (jääb alles; Enemy ei kasuta)
 
     spawn_x = int(SPAWN_REL[0] * W)
     spawn_y = int(SPAWN_REL[1] * H)
@@ -342,7 +370,7 @@ def run_game(screen):
         for b in bullets:
             b.draw(screen)
         for e in enemies:
-            e.draw(screen)
+            e.draw(screen, player.pos)   # (ENEMY_PATTERN) pööramine mängija suunas
         player.draw(screen)
 
         # HUD (ülakõrvale)
