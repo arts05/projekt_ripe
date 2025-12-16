@@ -12,11 +12,21 @@ RED    = (220, 60, 60)
 GREEN  = (40, 160, 60)
 YELLOW = (250, 220, 70)
 BLACK  = (10,  10,  10)
+DARK_GREEN = (20, 60, 20)
 
-# Taustapildi failinimi (asub kaustas assets/)
+# Taustapildi failinimi (asub kaustas assets/) – jätame samaks stiiliks nagu sul oli
 BG_FILENAME = os.path.join(os.path.dirname(__file__), "assets", "pirogov_droon.png")
 
+# Sprite-failide täisteed (nagu soovisid)
+PLAYER_LOOK = os.path.join(os.path.dirname(__file__), "assets", "tekkelpixel.png")
+ENEMY_LOOK  = os.path.join(os.path.dirname(__file__), "assets", "parm.png")
+
+# Mängija algpositsioon (suhtelised koordinaadid ekraani mõõtude suhtes)
 SPAWN_REL = (0.535, 0.305)
+
+# Suurused (ringide/“hitboxi” raadiused px)
+PLAYER_R = 18
+ENEMY_R  = 14
 
 
 # ---- ABIFUNKTSIOONID ----
@@ -29,24 +39,52 @@ def _unit_vec(ax, ay, bx, by):
     return dx / d, dy / d
 
 
+def _asset_path(name):
+    """Koosta täistee assets-kausta alla (nagu sinu varasem stiil)."""
+    return os.path.join(os.path.dirname(__file__), "assets", name)
+
+
 def _load_background(w, h):
     """Laeb taustapildi assets-kaustast ja skaleerib akna (w,h) mõõtu."""
-    base_dir = os.path.dirname(__file__)
-    bg_path = os.path.join(base_dir, "assets", BG_FILENAME)
-    img = pygame.image.load(bg_path).convert()
+    img = pygame.image.load(_asset_path(BG_FILENAME)).convert()
     return pygame.transform.scale(img, (w, h))
+
+
+def _load_sprite_or_none_from_path(path, diameter):
+    """
+    Laeb PNG antud TÄISTEELT ja skaleerib proportsionaalselt nii, et max(mõõdud) = diameter.
+    Tagastab Surface, mis on läbipaistva taustaga ruut (diameter x diameter),
+    kuhu pilt on keskele paigutatud. Kui faili pole või tekib viga, tagastab None.
+    """
+    if not os.path.exists(path):
+        return None
+    try:
+        img = pygame.image.load(path).convert_alpha()
+    except Exception:
+        return None
+
+    w, h = img.get_width(), img.get_height()
+    scale = diameter / max(w, h)
+    new_w, new_h = max(1, int(w * scale)), max(1, int(h * scale))
+    img = pygame.transform.smoothscale(img, (new_w, new_h))
+
+    surf = pygame.Surface((diameter, diameter), pygame.SRCALPHA)
+    rect = img.get_rect(center=(diameter // 2, diameter // 2))
+    surf.blit(img, rect)
+    return surf
 
 
 # ---- KLASSID ----
 class Player:
     """Mängija – paikneb pildil, ei liigu; saab tulistada hiire suunas."""
 
-    def __init__(self, x, y):
+    def __init__(self, x, y, sprite=None):
         self.pos = pygame.Vector2(x, y)  # asukoht ekraanil
-        self.r = 18                      # ringi raadius joonistamiseks / tabamuseks
+        self.r = PLAYER_R                # ringi raadius joonistamiseks / tabamuseks
         self.hp = 3                      # elud
         self.cooldown = 0.15             # tulistamise vahe (sekundites)
         self._cd = 0.0                   # sisemine taimer cooldowni jaoks
+        self.sprite = sprite             # eel-skaleeritud Surface või None
 
     def update(self, dt):
         """Uuenda cooldowni taimerit."""
@@ -64,8 +102,14 @@ class Player:
         return Bullet(self.pos.x, self.pos.y, dx, dy)
 
     def draw(self, s):
-        """Joonista mängija ja väike sihikujoon hiire suunas."""
-        pygame.draw.circle(s, GREEN, (int(self.pos.x), int(self.pos.y)), self.r)
+        """Joonista mängija (sprite või ring) ja väike sihikujoon hiire suunas."""
+        if self.sprite:
+            rect = self.sprite.get_rect(center=(int(self.pos.x), int(self.pos.y)))
+            s.blit(self.sprite, rect)
+        else:
+            pygame.draw.circle(s, GREEN, (int(self.pos.x), int(self.pos.y)), self.r)
+
+        # sihikujoon
         mx, my = pygame.mouse.get_pos()
         dx, dy = _unit_vec(self.pos.x, self.pos.y, mx, my)
         tip = (int(self.pos.x + dx * self.r), int(self.pos.y + dy * self.r))
@@ -100,7 +144,7 @@ class Bullet:
 class Enemy:
     """Vaenlane – sünnib ekraani servast ja liigub otse mängija poole."""
 
-    def __init__(self, wave, w, h):
+    def __init__(self, wave, w, h, sprite=None):
         # Vali juhuslik serv, kuhu spawnida
         side = random.choice(("t", "b", "l", "r"))
         if side == "t":
@@ -116,9 +160,10 @@ class Enemy:
         base = 70 + wave * 4
         self.speed = random.uniform(base * 0.9, base * 1.2)
 
-        self.r = 14
+        self.r = ENEMY_R
         self.hp = 1 + (1 if wave >= 6 else 0)  # alates 6. lainest veidi sitkem
         self.alive = True
+        self.sprite = sprite  # eel-skaleeritud Surface või None
 
     def update(self, dt, target_pos):
         """Liigu sihtmärgi (mängija) suunas."""
@@ -133,8 +178,12 @@ class Enemy:
             self.alive = False
 
     def draw(self, s):
-        """Joonista vaenlane."""
-        pygame.draw.circle(s, RED, (int(self.pos.x), int(self.pos.y)), self.r)
+        """Joonista vaenlane (sprite või ring)."""
+        if self.sprite:
+            rect = self.sprite.get_rect(center=(int(self.pos.x), int(self.pos.y)))
+            s.blit(self.sprite, rect)
+        else:
+            pygame.draw.circle(s, RED, (int(self.pos.x), int(self.pos.y)), self.r)
 
 
 class Waves:
@@ -153,14 +202,14 @@ class Waves:
         """Tagasta antud laine vaenlaste kogus."""
         return 5 + (w - 1) * 3
 
-    def update(self, dt, enemies, W, H):
+    def update(self, dt, enemies, W, H, enemy_sprite):
         """Lisa vaenlasi ajapõhiselt, kuni kogus täis."""
         if self.done_spawning:
             return
         self.acc += dt
         while self.acc >= self.interval and self.spawned < self.to_spawn:
             self.acc -= self.interval
-            enemies.append(Enemy(self.wave, W, H))
+            enemies.append(Enemy(self.wave, W, H, sprite=enemy_sprite))
             self.spawned += 1
         if self.spawned >= self.to_spawn:
             self.done_spawning = True
@@ -185,17 +234,23 @@ def run_game(screen):
 
     # Lae ja skaleeri taust; arvuta mängija algpositsioon ekraani mõõtudes
     bg_image = _load_background(W, H)
+
+    # Lae ja skaleeri sprited (kui puuduvad, tagastab None → joonistame ringid)
+    player_sprite = _load_sprite_or_none_from_path(PLAYER_LOOK, diameter=PLAYER_R * 2)
+    enemy_sprite  = _load_sprite_or_none_from_path(ENEMY_LOOK,  diameter=ENEMY_R  * 2)
+
     spawn_x = int(SPAWN_REL[0] * W)
     spawn_y = int(SPAWN_REL[1] * H)
 
     # Mängu olek
-    player = Player(spawn_x, spawn_y)
+    player = Player(spawn_x, spawn_y, sprite=player_sprite)
     bullets, enemies = [], []
     waves = Waves()
     score = 0
 
     state = "play"                       # "play" | "win" | "lose"
     font = pygame.font.SysFont("consolas", 22)
+    font_big = pygame.font.SysFont("consolas", 28, bold=True)
 
     while True:
         dt = clock.tick(60) / 1000.0     # kaadri aeg sekundites
@@ -218,18 +273,30 @@ def run_game(screen):
 
         # Kui pole mänguseisund "play", joonista lõpp-ekraan ja oota klahvi
         if state != "play":
+            # Kasutame sama mängu taustapilti ka lõppseisus (eraldiseisvat lõputausta ei kasutata)
             screen.blit(bg_image, (0, 0))
-            msg = "VÕIT! 10 lainet puhastatud." if state == "win" else "KAOTUS! HP sai otsa."
-            t1 = font.render(msg, True, WHITE)
+
+            if state == "win":
+                # ülemine lint + sõnum
+                banner_h = 60
+                pygame.draw.rect(screen, DARK_GREEN, (0, 0, W, banner_h))
+                msg = "Palju õnne! Sa jäid ellu ja saad minna edasi Shooters'isse!"
+                text = font_big.render(msg, True, WHITE)
+                screen.blit(text, (W // 2 - text.get_width() // 2, (banner_h - text.get_height()) // 2))
+            else:
+                # kaotuse lühitekst keskel
+                t1 = font_big.render("KAOTUS! HP sai otsa.", True, WHITE)
+                screen.blit(t1, (W // 2 - t1.get_width() // 2, H // 2 - 20))
+
+            # all rida juhiseks
             t2 = font.render("Vajuta suvalist klahvi – tagasi menüüsse", True, WHITE)
-            screen.blit(t1, (W // 2 - t1.get_width() // 2, H // 2 - 20))
-            screen.blit(t2, (W // 2 - t2.get_width() // 2, H // 2 + 18))
+            screen.blit(t2, (W // 2 - t2.get_width() // 2, H - 40))
             pygame.display.flip()
             continue
 
         # ---- LOOGIKA ----
         player.update(dt)
-        waves.update(dt, enemies, W, H)
+        waves.update(dt, enemies, W, H, enemy_sprite)
 
         # Kuulid edasi ja prügikoristus
         for b in bullets:
